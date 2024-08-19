@@ -3,7 +3,8 @@ import Mathlib.Data.Complex.Basic
 import Mathlib.Analysis.Complex.Basic
 import Mathlib.Order.Filter.AtTopBot
 import Mathlib.Analysis.Normed.Group.InfiniteSum
-import Mathlib.Analysis.NormedSpace.FiniteDimension
+import Mathlib.Analysis.Normed.Module.FiniteDimension
+import Mathlib.Data.Complex.FiniteDimensional
 
 universe u v w
 
@@ -74,7 +75,7 @@ theorem M_test_uniform (h : Nonempty α) (F : ℕ → α → ℂ) (M : ℕ → �
     simp at *
     have HXX := HC ε hε
     obtain ⟨a, ha⟩ := HXX
-    refine' ⟨a, _⟩
+    refine ⟨a, ?_⟩
     intro b hb
     convert ha b hb
   have c1 : ∀ (a : α) (n : ℕ), 0 ≤ Complex.abs (F n a) := by

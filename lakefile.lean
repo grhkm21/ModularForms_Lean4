@@ -15,4 +15,4 @@ lean_lib «Modformsported» {
   -- add any library configuration options here
 }
 
-require LeanCopilot from git "https://github.com/lean-dojo/LeanCopilot.git" @ "v1.1.0"
+require LeanCopilot from git "https://github.com/lean-dojo/LeanCopilot.git" @ "v1.5.1"

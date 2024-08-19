@@ -3,7 +3,7 @@ import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Data.Matrix.Notation
 import Mathlib.GroupTheory.GroupAction.Basic
 import Mathlib.GroupTheory.GroupAction.Hom
-import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup
+import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 import Mathlib.Data.Complex.Basic
 import Modformsported.ModForms.ModularGroup.MatM
 
@@ -89,11 +89,8 @@ theorem m_a_b (m : ℤ) (A : SL2Z) (M N : IntegralMatricesWithDeterminant (Fin 2
   rw [←h]; constructor ; apply this.1; constructor; apply this.2.1;
   constructor; apply this.2.2.1; apply this.2.2.2
   intro h
-  ext i j;
-  fin_cases i <;> fin_cases j;
-  simp; rw [h.1]; convert this.1;
-  simp; rw [h.2.1]; convert this.2.1; simp; rw [h.2.2.1]; convert this.2.2.1; simp; rw [h.2.2.2]
-  convert this.2.2.2;
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [h]
 
 @[simp]
 theorem SLnZ_M_a (A : SL2Z) (M : IntegralMatricesWithDeterminant (Fin 2) m) :
@@ -121,9 +118,9 @@ def matZToR (A : Matrix (Fin 2) (Fin 2) ℤ) : Matrix (Fin 2) (Fin 2) ℝ :=
 theorem nonzero_inv (a : ℝ) (h : 0 < a) : IsUnit a :=
   by
   have h2 : a ≠ 0 := by
-    simp only [Ne.def]; by_contra h1; rw [h1] at h ;
+    by_contra h1; rw [h1] at h ;
     simp only [lt_self_iff_false] at h ;
-  rw [isUnit_iff_exists_inv]; use a⁻¹; apply mul_inv_cancel h2
+  rw [isUnit_iff_exists_inv]; use a⁻¹; apply mul_inv_cancel₀ h2
 
 @[simp]
 theorem mat_val (A : SL2Z) (i j : Fin 2) : (matZToR A.1) i j = (A.1 i j : ℝ) :=
@@ -135,7 +132,8 @@ theorem mat_val (A : SL2Z) (i j : Fin 2) : (matZToR A.1) i j = (A.1 i j : ℝ) :
 
 @[simp]
 theorem mat_vals (A : SL2Z) (i j : Fin 2) : (A : GL (Fin 2) ℝ) i j = (A.1 i j : ℝ) := by
-  simp [mat_val, matZToR]; fin_cases i <;> fin_cases j; rfl; rfl; rfl; rfl
+  simp [SpecialLinearGroup.map]
+  rfl
 
 /-
 @[simp]

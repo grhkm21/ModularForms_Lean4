@@ -1,13 +1,15 @@
 import Modformsported.ForMathlib.ModForms2
 import Modformsported.ForMathlib.TsumLemmas
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Topology.ContinuousFunction.Compact
 
 noncomputable section
 
-open ModularForm  UpperHalfPlane TopologicalSpace Set Metric Filter Function Complex
+open UpperHalfPlane hiding I
+open ModularForm TopologicalSpace Set Metric Filter Function Complex
 
 open scoped Interval Real NNReal ENNReal Topology BigOperators Nat Classical
 
@@ -16,24 +18,31 @@ open scoped Interval Real NNReal ENNReal Topology BigOperators Nat Classical
 local notation "ℍ'" =>
   (TopologicalSpace.Opens.mk UpperHalfPlane.upperHalfSpace upper_half_plane_isOpen)
 
-theorem exp_upperHalfPlane_lt_one (z : ℍ) : Complex.abs (Complex.exp (2 * ↑π * I * z)) < 1 := by
-  simp only [abs_exp, mul_re, re_ofNat, ofReal_re, im_ofNat, ofReal_im, mul_zero, sub_zero, I_re,
-    mul_im, zero_mul, add_zero, I_im, mul_one, sub_self, coe_re, coe_im, zero_sub,
-    Real.exp_lt_one_iff, neg_neg_iff_pos]
-  positivity
+lemma Complex.norm_exp (z : ℂ) : ‖cexp z‖ = rexp z.re := by
+  simp [abs_exp]
+
+lemma Complex.norm_exp_mul_I (z : ℂ) : ‖cexp (z * I)‖ = rexp (-z.im) := by
+  simp [abs_exp]
+
+theorem exp_upperHalfPlane_lt_one (z : ℍ) : Complex.abs (Complex.exp (2 * π * I * z)) < 1 := by
+  rw [mul_right_comm, ← norm_eq_abs, norm_exp_mul_I, ← Real.exp_zero]
+  apply Real.exp_strictMono
+  simp only [mul_im, mul_re, re_ofNat, ofReal_re, im_ofNat, ofReal_im, mul_zero, sub_zero, coe_im,
+    zero_mul, add_zero, coe_re, Left.neg_neg_iff]
+  apply mul_pos (mul_pos zero_lt_two Real.pi_pos) z.prop
 
 theorem summable_iter_derv' (k : ℕ) (y : ℍ') :
     Summable fun n : ℕ => (2 * ↑π * I * n) ^ k * Complex.exp (2 * ↑π * I * n * y) :=
   by
   apply Summable.of_norm
-  simp only [Opens.coe_mk, norm_mul, norm_pow, IsROrC.norm_ofNat, norm_eq_abs, abs_ofReal, abs_I,
+  simp only [Opens.coe_mk, norm_mul, norm_pow, RCLike.norm_ofNat, norm_eq_abs, abs_ofReal, abs_I,
     mul_one, norm_nat, abs_natCast, mul_pow]
   simp_rw [mul_assoc]
   rw [summable_mul_left_iff (pow_ne_zero _ two_ne_zero)]
   rw [summable_mul_left_iff (pow_ne_zero _ (abs_ne_zero.mpr Real.pi_ne_zero))]
   simp_rw [← mul_assoc]
   have : Summable fun n : ℕ => (n : ℝ) ^ k * Complex.abs (Complex.exp (2 * ↑π * I * y)) ^ n := by
-    apply summable_pow_mul_geometric_of_norm_lt_1
+    apply summable_pow_mul_geometric_of_norm_lt_one
     simp only [Real.norm_eq_abs, Complex.abs_abs]
     apply exp_upperHalfPlane_lt_one
   apply this.congr
@@ -63,7 +72,7 @@ theorem summable_pow_mul_exp {k : ℕ} (z : ℍ) :
   norm_cast at *
   simp only [PNat.pow_coe, Nat.cast_pow, map_pow, abs_natCast, ofReal_mul, ofReal_ofNat] at *
   rw [lj ]
-  apply summable_pow_mul_geometric_of_norm_lt_1
+  apply summable_pow_mul_geometric_of_norm_lt_one
   simp
   apply exp_upperHalfPlane_lt_one
   simp
@@ -162,7 +171,7 @@ theorem iter_deriv_comp_bound2 (K : Set ℂ) (hK1 : K ⊆ ℍ') (hK2 : IsCompact
     intro x; rw [BoundedContinuousFunction.mkOfCompact_apply]; simp_rw [cts_exp_two_pi_n]
     simp only [ContinuousMap.coe_mk, norm_eq_abs]
     apply exp_upperHalfPlane_lt_one ⟨x.1, hK1 x.2⟩; linarith
-  have hr2 : 0 ≤ r := by simp only [norm_nonneg]
+  have hr2 : 0 ≤ r := norm_nonneg _
   have hu : Summable fun n : ℕ => Complex.abs ((2 * ↑π * I * n) ^ (k + 1) * r ^ n) :=
     by
     have : ∀ (n : ℕ), ((2 * ↑π)^(k+1))* ((n) ^ (k + 1) *Complex.abs (r ^ n)) =
@@ -183,50 +192,45 @@ theorem iter_deriv_comp_bound2 (K : Set ℂ) (hK1 : K ⊆ ℍ') (hK2 : IsCompact
     rw [summable_mul_left_iff]
 
     simp only [BoundedContinuousFunction.norm_mkOfCompact, Nat.cast_pow, map_pow, abs_ofReal, abs_norm]
-    apply summable_pow_mul_geometric_of_norm_lt_1
-    simp only [norm_norm]
-    apply hr
-    norm_cast
-    apply pow_ne_zero
-    apply mul_ne_zero
-    linarith
-    apply Real.pi_ne_zero
-  refine' ⟨fun n : ℕ => Complex.abs ((2 * ↑π * I * n) ^ (k + 1) * r ^ n), hu, _⟩
-  intro n t
-  have go := der_iter_eq_der2' k n ⟨t.1, hK1 t.2⟩
-  simp at *
-  simp_rw [go]
-  have h1 := exp_iter_deriv_within (k + 1) n (hK1 t.2)
-  norm_cast at *
-  simp at *
-  rw [h1]
-  simp
-  have ineqe : Complex.abs (Complex.exp (2 * π * I * n * t)) ≤ ‖r‖ ^ n :=
-    by
-    have hw1 :
-      Complex.abs (Complex.exp (2 * π * I * n * t)) =
-        Complex.abs (Complex.exp (2 * π * I * t)) ^ n := by
-          norm_cast
-          rw [← Complex.abs_pow];
-          congr;
-          rw [← exp_nat_mul];
-          ring_nf
-    rw [hw1]
-    norm_cast
-    apply pow_le_pow_left
-    apply Complex.abs.nonneg
-    simp only [norm_nonneg]
-    have :=
-      BoundedContinuousFunction.norm_coe_le_norm
-        (BoundedContinuousFunction.mkOfCompact (cts_exp_two_pi_n K)) t
+    apply summable_pow_mul_geometric_of_norm_lt_one
+    simp_rw [r, norm_abs_eq_norm, norm_norm]
+    exact hr
+    positivity
+  refine ⟨fun n : ℕ => Complex.abs ((2 * ↑π * I * n) ^ (k + 1) * r ^ n), ?_, ?_⟩
+  · exact hu
+  · intro n t
+    have go := der_iter_eq_der2' k n ⟨t.1, hK1 t.2⟩
     simp at *
-    exact this
-  apply mul_le_mul
-  simp
-  simp at ineqe
-  convert ineqe
-  apply Complex.abs.nonneg
-  positivity
+    simp_rw [go]
+    have h1 := exp_iter_deriv_within (k + 1) n (hK1 t.2)
+    norm_cast at *
+    simp at *
+    rw [h1]
+    simp
+    have ineqe : Complex.abs (Complex.exp (2 * π * I * n * t)) ≤ ‖r‖ ^ n := by
+      have hw1 :
+        Complex.abs (Complex.exp (2 * π * I * n * t)) =
+          Complex.abs (Complex.exp (2 * π * I * t)) ^ n := by
+            norm_cast
+            rw [← Complex.abs_pow];
+            congr;
+            rw [← exp_nat_mul];
+            ring_nf
+      rw [hw1]
+      norm_cast
+      apply pow_le_pow_left
+      apply Complex.abs.nonneg
+      have := BoundedContinuousFunction.norm_coe_le_norm
+        (BoundedContinuousFunction.mkOfCompact (cts_exp_two_pi_n K)) t
+      simp at *
+      convert this
+      simp [cts_exp_two_pi_n, r]
+    apply mul_le_mul
+    simp
+    simp at ineqe
+    convert ineqe
+    apply Complex.abs.nonneg
+    positivity
 
 theorem iter_deriv_comp_bound3 (K : Set ℂ) (hK1 : K ⊆ ℍ') (hK2 : IsCompact K) (k : ℕ) :
     ∃ u : ℕ → ℝ,
@@ -244,7 +248,6 @@ theorem iter_deriv_comp_bound3 (K : Set ℂ) (hK1 : K ⊆ ℍ') (hK2 : IsCompact
     intro x; rw [BoundedContinuousFunction.mkOfCompact_apply]; simp_rw [cts_exp_two_pi_n]
     simp only [ContinuousMap.coe_mk, norm_eq_abs]
     apply exp_upperHalfPlane_lt_one ⟨x.1, hK1 x.2⟩; linarith
-  have hr2 : 0 ≤ r := by simp only [norm_nonneg]
   have hu : Summable fun n : ℕ => Complex.abs ((2 * ↑π * I * n) ^ (k ) * r ^ n) :=
     by
     have : ∀ (n : ℕ), ((2 * ↑π)^(k))* ((n) ^ (k ) *Complex.abs (r ^ n)) =
@@ -265,44 +268,42 @@ theorem iter_deriv_comp_bound3 (K : Set ℂ) (hK1 : K ⊆ ℍ') (hK2 : IsCompact
     rw [summable_mul_left_iff]
 
     simp only [BoundedContinuousFunction.norm_mkOfCompact, Nat.cast_pow, map_pow, abs_ofReal, abs_norm]
-    apply summable_pow_mul_geometric_of_norm_lt_1
-    simp only [norm_norm]
-    apply hr
+    apply summable_pow_mul_geometric_of_norm_lt_one
+    rw [norm_abs_eq_norm]
+    convert hr
+    simp [r, cts_exp_two_pi_n]
+    positivity
+  refine ⟨fun n : ℕ => Complex.abs ((2 * ↑π * I * n) ^ k * r ^ n), ?_, ?_⟩
+  · exact hu
+  · intro n t
+    have ineqe : Complex.abs (Complex.exp (2 * π * I * n * t)) ≤ ‖r‖ ^ n :=
+      by
+      have hw1 :
+        Complex.abs (Complex.exp (2 * π * I * n * t)) =
+          Complex.abs (Complex.exp (2 * π * I * t)) ^ n := by
+          norm_cast
+          rw [← Complex.abs_pow]; congr; rw [← exp_nat_mul]; ring_nf
+      rw [hw1]
+      norm_cast
+      apply pow_le_pow_left
+      apply Complex.abs.nonneg
+      have :=
+        BoundedContinuousFunction.norm_coe_le_norm
+          (BoundedContinuousFunction.mkOfCompact (cts_exp_two_pi_n K)) t
+      simp  [norm_norm, BoundedContinuousFunction.norm_mkOfCompact, norm_nonneg,
+        AbsoluteValue.map_mul, Complex.abs_pow, Complex.abs_two,  abs_I, mul_one,
+        abs_natCast, BoundedContinuousFunction.mkOfCompact_apply, norm_eq_abs, abs_norm] at *
+      convert this
+      simp [r]
+    simp [AbsoluteValue.map_mul, Complex.abs_pow, Complex.abs_two,  abs_I, mul_one,
+      abs_natCast, BoundedContinuousFunction.norm_mkOfCompact, abs_norm]
+    apply mul_le_mul
+    rfl
+    simp only [norm_norm, BoundedContinuousFunction.norm_mkOfCompact] at ineqe
+    convert ineqe
     norm_cast
-    apply pow_ne_zero
-    apply mul_ne_zero
-    linarith
-    apply Real.pi_ne_zero
-  refine' ⟨fun n : ℕ => Complex.abs ((2 * ↑π * I * n) ^ k * r ^ n), hu, _⟩
-  intro n t
-  have ineqe : Complex.abs (Complex.exp (2 * π * I * n * t)) ≤ ‖r‖ ^ n :=
-    by
-    have hw1 :
-      Complex.abs (Complex.exp (2 * π * I * n * t)) =
-        Complex.abs (Complex.exp (2 * π * I * t)) ^ n := by
-        norm_cast
-        rw [← Complex.abs_pow]; congr; rw [← exp_nat_mul]; ring_nf
-    rw [hw1]
-    norm_cast
-    apply pow_le_pow_left
     apply Complex.abs.nonneg
-    simp only [norm_nonneg]
-    have :=
-      BoundedContinuousFunction.norm_coe_le_norm
-        (BoundedContinuousFunction.mkOfCompact (cts_exp_two_pi_n K)) t
-    simp  [norm_norm, BoundedContinuousFunction.norm_mkOfCompact, norm_nonneg,
-      AbsoluteValue.map_mul, Complex.abs_pow, Complex.abs_two,  abs_I, mul_one,
-      abs_natCast, BoundedContinuousFunction.mkOfCompact_apply, norm_eq_abs, abs_norm] at *
-    exact this
-  simp [AbsoluteValue.map_mul, Complex.abs_pow, Complex.abs_two,  abs_I, mul_one,
-    abs_natCast, BoundedContinuousFunction.norm_mkOfCompact, abs_norm]
-  apply mul_le_mul
-  rfl
-  simp only [norm_norm, BoundedContinuousFunction.norm_mkOfCompact] at ineqe
-  convert ineqe
-  norm_cast
-  apply Complex.abs.nonneg
-  positivity
+    positivity
 
 theorem exp_series_ite_deriv_uexp2 (k : ℕ) (x : ℍ') :
     iteratedDerivWithin k (fun z => ∑' n : ℕ, Complex.exp (2 * ↑π * I * n * z)) ℍ' x =
@@ -381,7 +382,7 @@ theorem tsum_uexp_contDiffOn (k : ℕ) :
   intro K hK1 hK2
   have := iter_deriv_comp_bound3 K hK1 hK2 (m + 1)
   obtain ⟨u, hu, hu2⟩ := this
-  refine' ⟨u, hu, _⟩
+  refine ⟨u, hu, ?_⟩
   intro n r
   have HU2 := hu2 n r
   simp only [deriv_const_mul_field', map_mul, map_pow, Complex.abs_two, abs_ofReal,
@@ -422,17 +423,15 @@ theorem iter_der_within_add (k : ℕ+) (x : ℍ') :
       (f := fun z => (2 * ↑π * I) • ∑' n : ℕ, Complex.exp (2 * ↑π * I * n * z))
   simp at this
   erw [this]
-  · rw [neg_eq_neg_one_mul]
-    have t2 :=
-      iteratedDerivWithin_const_mul x.2 UpperHalfPlane.upperHalfSpace.uniqueDiffOn (n := k)
-        (2 * ↑π * I) (f := fun z => ∑' n : ℕ, Complex.exp (2 * ↑π * I * n * z))
-    simp at t2
-    rw [t2]
-    · simp
-      have h3 := exp_series_ite_deriv_uexp'' k x
-      simp at h3
-      left
-      apply h3
-    · apply tsum_uexp_contDiffOn k
-  · have := ContDiffOn.const_smul (2 * ↑π * I) (tsum_uexp_contDiffOn k)
-    simpa using this
+  rw [neg_eq_neg_one_mul]
+  have t2 :=
+    iteratedDerivWithin_const_mul x.2 UpperHalfPlane.upperHalfSpace.uniqueDiffOn (n := k)
+      (2 * ↑π * I) (f := fun z => ∑' n : ℕ, Complex.exp (2 * ↑π * I * n * z))
+  simp at t2
+  rw [t2]
+  · simp
+    have h3 := exp_series_ite_deriv_uexp'' k x
+    simp at h3
+    left
+    apply h3
+  · apply tsum_uexp_contDiffOn k

@@ -1,5 +1,5 @@
 import Mathlib.Data.Complex.Abs
-import Mathlib.Data.IsROrC.Basic
+import Mathlib.Analysis.RCLike.Basic
 
 /-! # Decomposing `ℤ × ℤ` into squares
 
@@ -48,8 +48,8 @@ lemma square_disjunion (n : ℤ) :
 
 theorem square_size (n : ℕ) : Finset.card (square (n + 1)) = 8 * (n + 1) := by
   have : (((square (n+1)).disjUnion (Icc (-n : ℤ) n ×ˢ Icc (-n : ℤ) n) square_disj).card : ℤ) =
-    (Icc (-(n+1 : ℤ)) (n+1) ×ˢ Icc (-(n+1 : ℤ)) (n+1)).card
-  · rw [square_disjunion]
+      (Icc (-(n+1 : ℤ)) (n+1) ×ˢ Icc (-(n+1 : ℤ)) (n+1)).card := by
+    rw [square_disjunion]
   rw [card_disjUnion, card_product, Nat.cast_add, Nat.cast_mul, card_product, Nat.cast_mul,
     Int.card_Icc, Int.card_Icc, Int.toNat_sub_of_le, Int.toNat_sub_of_le,
     ←eq_sub_iff_add_eq] at this
@@ -94,16 +94,14 @@ theorem square_card_le {n : ℕ}  : Finset.card (square n) ≤  8 * n + 1 := by
   · rw [square_size' hn]
     linarith
 
-lemma _root_.Complex.abs_int_cast (z : ℤ) : Complex.abs z = |z| := by
-  rw [← int_cast_abs]
-  norm_cast
-
 lemma Complex_abs_eq_of_mem_square (n : ℕ) (x : ℤ × ℤ) (h : x ∈ square n) :
     Complex.abs x.1 = n ∨ Complex.abs x.2 = n := by
-  simp_rw [Complex.abs_int_cast, Int.abs_eq_natAbs, Int.cast_ofNat, Nat.cast_inj, eq_comm (b := n)]
-  rw [square_mem] at h
-  subst n
-  exact max_choice ..
+  simp_rw [eq_comm, ← (square_mem _ _).mp h]
+  cases' max_choice x.1.natAbs x.2.natAbs with h' h'
+  <;> [left; right]
+  <;> simp [h', Int.cast_natCast, Nat.cast_natAbs]
+
+example {a b : ℝ} : max a b = a ∨ max a b = b := max_choice a b
 
 lemma Complex_abs_square_left_ne (n : ℕ) (x : ℤ × ℤ) (h : x ∈ square n)
     (hx : Complex.abs (x.1) ≠ n) : Complex.abs (x.2) = n :=

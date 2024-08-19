@@ -1,1 +1,1 @@
-This will be frozen on lean 4.5.0-rc1 as I port it to mathlib.
+This will be frozen on lean 4.11.0-rc1 for LeanCopilot@v1.5.1

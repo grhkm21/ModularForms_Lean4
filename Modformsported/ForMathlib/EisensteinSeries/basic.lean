@@ -5,6 +5,7 @@ Authors: Chris Birkbeck
 -/
 import Mathlib.NumberTheory.ModularForms.SlashInvariantForms
 import Mathlib.Analysis.Complex.UpperHalfPlane.Topology
+import Mathlib.NumberTheory.ModularForms.EisensteinSeries.Defs
 
 open Complex Real ModularForm SlashInvariantForm
 
@@ -88,27 +89,22 @@ def MoebiusEquiv (A : SL(2,ℤ)) : ℤ × ℤ ≃ ℤ × ℤ
 -- How the Eise function changes under the Moebius action
 theorem eise_Moebius (k : ℤ) (z : ℍ) (A : SL(2,ℤ)) (i : ℤ × ℤ) :
     eise k (A • z) i =
-      (A.1 1 0 * z.1 + A.1 1 1) ^ k * eise k z (MoebiusEquiv A i) :=
-  by
-  simp_rw [eise, UpperHalfPlane.specialLinearGroup_apply]
-  simp only [algebraMap_int_eq, eq_intCast, ofReal_int_cast, UpperHalfPlane.coe_mk,
-    one_div]
-  norm_cast
-  have hc := Moebius_aux_lem k (A 0 0) (A 0 1) (A 1 0) (A 1 1) i.fst i.snd z ?_
-  norm_cast at *
-  apply UpperHalfPlane.denom_ne_zero A
+      (A.1 1 0 * z.1 + A.1 1 1) ^ k * eise k z (MoebiusEquiv A i) := by
+  convert eisSummand_SL2_apply k ![i.fst, i.snd] _ _
+  · simp [eise, eisSummand]
+  · simp [eise, eisSummand, MoebiusEquiv, MoebiusPerm, Matrix.vecMul, Matrix.vecHead, Matrix.vecTail]
 
-/--The Slash Invariant Form defined by an Eisenstein series-/
-def Eisenstein_SIF (Γ : Subgroup SL(2,ℤ)) (k : ℤ) : SlashInvariantForm Γ k
-    where
-  toFun := Eisenstein_tsum k
-  slash_action_eq' := by
-    intro A
-    ext1 x
-    simp_rw [slash_action_eq'_iff]
-    rw [Eisenstein_tsum]
-    simp only [UpperHalfPlane.subgroup_to_sl_moeb, UpperHalfPlane.sl_moeb]
-    convert (tsum_congr (eise_Moebius k x A))
-    have h3 := Equiv.tsum_eq (MoebiusEquiv A) (eise k x)
-    rw [tsum_mul_left, h3, Eisenstein_tsum]
-    norm_cast
+#check eisensteinSeries_SIF
+-- /--The Slash Invariant Form defined by an Eisenstein series-/
+-- def Eisenstein_SIF (Γ : Subgroup SL(2,ℤ)) (k : ℤ) : SlashInvariantForm Γ k where
+--   toFun := Eisenstein_tsum k
+--   slash_action_eq' := by
+--     intro A
+--     ext1 x
+--     simp_rw [slash_action_eq'_iff]
+--     rw [Eisenstein_tsum]
+--     simp only [UpperHalfPlane.subgroup_to_sl_moeb, UpperHalfPlane.sl_moeb]
+--     convert (tsum_congr (eise_Moebius k x A))
+--     have h3 := Equiv.tsum_eq (MoebiusEquiv A) (eise k x)
+--     rw [tsum_mul_left, h3, Eisenstein_tsum]
+--     norm_cast

@@ -7,7 +7,7 @@ import Modformsported.ForMathlib.EisensteinSeries.summable
 import Modformsported.ForMathlib.ModForms2
 import Modformsported.ModForms.HolomorphicFunctions
 import Modformsported.ModForms.WeierstrassMTest
-import Mathlib.NumberTheory.ZetaFunction
+import Mathlib.NumberTheory.LSeries.RiemannZeta
 
 open Complex
 
@@ -30,7 +30,7 @@ namespace EisensteinSeries
 
 theorem complex_abs_sum_le {ι : Type _} (s : Finset ι) (f : ι → ℂ) :
     Complex.abs (∑ i in s, f i) ≤ ∑ i in s, Complex.abs (f i) :=
-  abv_sum_le_sum_abv (fun k : ι => f k) s
+  IsAbsoluteValue.abv_sum _ _ _
 
 lemma uhc (z : ℍ) : (z : ℂ) = z.1 := by rfl
 
@@ -103,14 +103,11 @@ theorem closedBall_in_slice (z : ℍ') :
   let a := Complex.abs z.1.2 + Complex.abs z
   let b := Complex.abs z.1.2 - e
   refine ⟨a, b, e, ?_, ?_, ?_, ?_, ?_⟩
-  · simp only [abs_ofReal, gt_iff_lt, inv_pos, zero_lt_three,mul_pos_iff_of_pos_left, abs_pos, ne_eq]
+  · simp only [e, abs_ofReal, gt_iff_lt, inv_pos, zero_lt_three,mul_pos_iff_of_pos_left, abs_pos, ne_eq]
     apply UpperHalfPlane.im_ne_zero z
   · ring_nf
     simp [UpperHalfPlane.coe_im]
-    apply mul_pos
-    · rw [abs_pos, ne_eq]
-      apply UpperHalfPlane.im_ne_zero z
-    · norm_num
+    exact ((UpperHalfPlane.mem_upperHalfSpace _).mp (z : ℍ).prop).ne.symm
   · intro x
     simp only [abs_ofReal, Metric.mem_closedBall, TopologicalSpace.Opens.coe_mk]
     intro hxz
@@ -120,21 +117,19 @@ theorem closedBall_in_slice (z : ℍ') :
     simp only [norm_eq_abs] at hxz
     have := Complex.abs.sub_le (x : ℂ) (z : ℂ) 0
     simp only [sub_zero] at this
-    simp only [upperHalfSpaceSlice, abs_ofReal, tsub_le_iff_right, Set.mem_setOf_eq]
+    simp only [upperHalfSpaceSlice, abs_ofReal, Set.mem_setOf_eq]
     constructor
     · have hre := le_trans (abs_re_le_abs x.1) this
       apply le_trans hre
-      simp only [add_le_add_iff_right]
-      apply le_trans hxz
-      apply mul_le_of_le_one_left (abs_nonneg _)
-      norm_num
-    have ineq1 := _root_.abs_sub_le z.1.2 x.1.2 0
-    simp only [sub_zero] at ineq1
-    apply le_trans ineq1
-    rw [add_comm]
-    simp only [add_le_add_iff_left]
-    have ki := le_trans (abs_im_le_abs (x.1 - z.1)) hxz
-    rwa [sub_im, abs_sub_comm] at ki
+      simp_rw [a]
+      gcongr
+      exact hxz.trans <| mul_le_of_le_one_left (by positivity) (by norm_num)
+    · simp_rw [b, sub_le_iff_le_add, ← sub_le_iff_le_add', abs_ofReal]
+      calc
+        _ ≤ |(z : ℂ).im - (x : ℂ).im| := abs_sub_abs_le_abs_sub _ _
+        _ = ‖(x - z : ℂ).im‖ := by simp; rw [abs_sub_comm]
+        _ ≤ ‖(x - z : ℂ)‖ := by simpa using RCLike.norm_im_le_norm (x - z : ℂ)
+        _ ≤ _ := by simp [hxz]
   · apply add_nonneg
     · apply Complex.abs.nonneg
     · apply Complex.abs.nonneg
@@ -142,7 +137,7 @@ theorem closedBall_in_slice (z : ℍ') :
     rw [← sub_pos]
     have hr : 0 < Complex.abs z.1.im := by simp; apply UpperHalfPlane.im_ne_zero z
     have hxim : 0 < |(z : ℂ).im| := by norm_cast at *
-    simp only [abs_ofReal, Int.ofNat_eq_coe, Nat.cast_ofNat, Int.int_cast_ofNat, Nat.cast_one, Int.cast_one,
+    simp only [abs_ofReal, Int.ofNat_eq_coe, Nat.cast_ofNat, Nat.cast_one, Int.cast_one,
       sub_pos, gt_iff_lt, abs_pos, ne_eq]
     linarith
 
@@ -345,7 +340,7 @@ lemma AbsEisen_slice_bounded (k : ℤ) (h : 3 ≤ k) (A B : ℝ) (hb : 0 < B)
   let g := fun y : ℤ × ℤ => (AbsEise k z) y
   have gpos : ∀ y : ℤ × ℤ, 0 ≤ g y := by
     intro y
-    simp_rw [AbsEise]
+    simp_rw [g, AbsEise]
     simp
     apply zpow_nonneg
     apply Complex.abs.nonneg
@@ -365,7 +360,7 @@ lemma AbsEisen_slice_bounded (k : ℤ) (h : 3 ≤ k) (A B : ℝ) (hb : 0 < B)
   intro b
   apply Finset.sum_nonneg
   intro x _
-  rw [AbsEise]
+  simp_rw [g, AbsEise]
   apply Complex.abs.nonneg
   apply AbsEise_bounded_on_square k z h
   have := summable_rfunct_twist k (lbpoint A B hb) h
@@ -486,7 +481,7 @@ lemma summable_upper_bound (k : ℤ) (h : 3 ≤ k) (z : ℍ) :
     right
     have hk0 : 0 ≤ k := by linarith
     lift k to ℕ using hk0
-    simp  [zpow_coe_nat, ne_eq, zero_pow_eq_zero, gt_iff_lt]
+    simp  [zpow_natCast, ne_eq, zero_pow_eq_zero, gt_iff_lt]
     linarith
     rw [square_size' b0]
     field_simp
@@ -510,7 +505,7 @@ lemma summable_upper_bound (k : ℤ) (h : 3 ≤ k) (z : ℍ) :
   simp
   apply zpow_nonneg
   apply (rfunct_pos z).le
-  simp  [ge_iff_le, Nat.cast_le, Real.rpow_nat_cast, inv_nonneg, le_max_iff, Nat.cast_nonneg,
+  simp  [ge_iff_le, Nat.cast_le, Real.rpow_natCast, inv_nonneg, le_max_iff, Nat.cast_nonneg,
     or_self, zpow_nonneg]
 
 
@@ -606,7 +601,7 @@ theorem Eisen_partial_tends_to_uniformly_on_ball (k : ℤ) (h : 3 ≤ k) (z : �
   simp_rw [eisenParSumSlice] at *
   simp_rw [eisenSquareSlice] at *
   simp_rw [eisenSquare']
-  simp  [Filter.eventually_atTop, gt_iff_lt, ge_iff_le, instNonempty,
+  simp  [Filter.eventually_atTop, gt_iff_lt, ge_iff_le,
     Metric.mem_closedBall, Subtype.forall, SetCoe.forall, UpperHalfPlane.coe_im, Subtype.coe_mk,
       UpperHalfPlane.coe_re] at *
   intro δ hδ

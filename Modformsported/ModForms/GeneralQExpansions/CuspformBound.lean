@@ -10,7 +10,7 @@ import Modformsported.ModForms.GeneralQExpansions.QExpansion
 The main result here is that if f is a cusp form of level 1, then
 `abs (f z) ^ 2 * (im z) ^ k` is uniformly bounded on the upper half-plane.
 
-FIXME : The code here depends on a couple of lemmas at the end of `mod_forms2.lean`, which ought
+TODO: The code here depends on a couple of lemmas at the end of `mod_forms2.lean`, which ought
 to be trivial but are gnarly because of the coercion issues around SL2Z actions. For some reason
 that code stops working if I transplant it to this file. -/
 
@@ -29,7 +29,6 @@ local notation "SL(" n ", " R ")" => Matrix.SpecialLinearGroup (Fin n) R
 theorem pet_cts {k : ℤ} (f : CuspForm ⊤ k) : Continuous (petSelf f k) :=
   by
   apply Continuous.mul
-  norm_cast
   · apply Continuous.pow
     apply Complex.continuous_abs.comp (f.holo'.continuous)
   · apply Continuous.zpow₀ UpperHalfPlane.continuous_im k
@@ -49,7 +48,7 @@ theorem image_fd (A : ℝ) :
     obtain ⟨x, ⟨⟨hx1, hx2⟩, hx3⟩, hzx⟩ := hz
     rw [← hzx]
 
-    refine' ⟨x.2.le, hx2, _, hx3⟩
+    refine ⟨x.2.le, hx2, ?_, hx3⟩
     rw [← one_le_sq_iff, ←Complex.normSq_eq_abs]; exact hx1; apply Complex.abs.nonneg
   · intro hz; obtain ⟨hz1, hz2, hz3, hz4⟩ := hz
     have h := le_or_lt (im z) 0
@@ -72,12 +71,12 @@ theorem image_fd (A : ℝ) :
         exact hz2
       norm_cast at *
       have t3 := le_trans t tt; exfalso; field_simp at t3 ; rw [le_one_div] at t3
-      · simp at t3 ; linarith;
+      · simp at t3
       · linarith;
       · linarith
     -- Now the main argument.
     use ⟨z, h⟩;
-    refine' ⟨⟨⟨_, hz2⟩, hz4⟩, by simp⟩
+    refine ⟨⟨⟨?_, hz2⟩, hz4⟩, rfl⟩
     rw [normSq_eq_abs]; rw [one_le_sq_iff (Complex.abs.nonneg _)]; exact hz3
 
 /-- The standard fundamental domain, truncated at some finite height, is compact. -/
@@ -88,7 +87,7 @@ theorem compact_trunc_fd (A : ℝ) : IsCompact {x : ℍ | x ∈ ModularGroup.fd 
   · apply_rules [IsClosed.inter]
     · apply isClosed_Ici.preimage continuous_im
     · have : Continuous (fun u => |re u| : ℂ → ℝ) := by continuity
-      refine' IsClosed.preimage this (@isClosed_Iic _ _ _ _ (1 / 2))
+      exact IsClosed.preimage this (@isClosed_Iic _ _ _ _ (1 / 2))
     · apply isClosed_Ici.preimage Complex.continuous_abs
     · apply isClosed_Iic.preimage continuous_im
   · rw [isBounded_iff_forall_norm_le]; use Real.sqrt (A ^ 2 + (1 / 2) ^ 2)

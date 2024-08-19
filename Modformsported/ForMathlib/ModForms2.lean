@@ -11,7 +11,7 @@ open Matrix Matrix.SpecialLinearGroup
 
 open scoped Classical BigOperators MatrixGroups UpperHalfPlane
 
-attribute [local instance] Fintype.card_fin_even
+-- attribute [local instance] Fintype.card_fin_even
 attribute [-instance] Matrix.SpecialLinearGroup.instCoeFun
 attribute [-instance] Matrix.GeneralLinearGroup.instCoeFun
 variable (g : SL(2, ℤ)) (z : ℍ) (Γ : Subgroup SL(2, ℤ))
@@ -127,29 +127,18 @@ theorem pet_is_invariant {k : ℤ} {Γ : Subgroup SL(2, ℤ)} (f : SlashInvarian
     have h1 : D ^ k ≠ 0 := zpow_ne_zero _ hD
     have h2 : conj D ^ k ≠ 0 := by
       apply zpow_ne_zero; rw [starRingEnd_apply, star_ne_zero]; exact hD
-    rw [div_div, mul_assoc]; apply div_mul_cancel; apply mul_ne_zero h1 h2
+    rw [div_div, mul_assoc, div_mul_cancel₀]; apply mul_ne_zero h1 h2
   have : ((γ • z : ℍ) : ℂ).im = UpperHalfPlane.im z / Complex.normSq D :=
     by
-    rw [UpperHalfPlane.coe_im]
-    rw [sl_moeb']
-    simp only [SMul.smul]
-    rw [UpperHalfPlane.im_smul_eq_div_normSq γ z]
-    refine congr_arg (fun x => x / Complex.normSq D) ?_
-    convert one_mul (UpperHalfPlane.im z)
-    simp only [UpperHalfPlane.coe_im,
-      Matrix.SpecialLinearGroup.coe_GLPos_coe_GL_coe_matrix,
-      Matrix.SpecialLinearGroup.coe_matrix_coe, Int.coe_castRingHom]
-    have h4 := _root_.RingHom.map_det (Int.castRingHom ℝ) γ.1
-    simp at h4
-    exact h4.symm
+    rw [UpperHalfPlane.coe_im, sl_moeb', UpperHalfPlane.im_smul_eq_div_normSq γ z]
+    simp
   apply_fun ((↑) : ℝ → ℂ) at this
   convert this
   simp only [UpperHalfPlane.coe_im, Complex.ofReal_div]
   rw [div_div, mul_conj]
 
 
-theorem petSelf_eq (f : ℍ → ℂ) (k : ℤ) (z : ℍ) : petSelf f k z = re (pet f f k z) :=
-  by
+theorem petSelf_eq (f : ℍ → ℂ) (k : ℤ) (z : ℍ) : petSelf f k z = re (pet f f k z) := by
   dsimp only [pet, petSelf]
   simp_rw [starRingEnd_apply]
   have : (star (f z) * f z * (z.im : ℂ) ^ k).re = (star (f z) * f z).re * ↑z.im ^ k :=
@@ -161,7 +150,7 @@ theorem petSelf_eq (f : ℍ → ℂ) (k : ℤ) (z : ℍ) : petSelf f k z = re (p
     rw [← ofReal_zpow, re_ofReal_mul, mul_comm]
   rw [this]; congr
   rw [mul_comm, ← normSq_eq_abs, normSq]
-  simp only [MonoidWithZeroHom.coe_mk, IsROrC.star_def, mul_re, conj_re, conj_im, mul_neg,
+  simp only [MonoidWithZeroHom.coe_mk, RCLike.star_def, mul_re, conj_re, conj_im, mul_neg,
     sub_neg_eq_add]
   simp only [ZeroHom.coe_mk]
 

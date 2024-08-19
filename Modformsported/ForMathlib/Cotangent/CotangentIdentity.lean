@@ -11,12 +11,13 @@ import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Modformsported.ForMathlib.LogDeriv
 import Modformsported.ForMathlib.Cotangent.basic
+import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 
 
 noncomputable section
 
 open ModularForm EisensteinSeries UpperHalfPlane TopologicalSpace Set MeasureTheory intervalIntegral
-  Metric Filter Function Complex
+  Metric Filter Function Complex ModularGroup
 
 open scoped Interval Real NNReal ENNReal Topology BigOperators Nat Classical
 
@@ -41,12 +42,12 @@ theorem logDeriv_sine (z : ℍ) : logDeriv (Complex.sin ∘ fun t => π * t) z =
   apply Differentiable.const_mul
   apply differentiable_id
 
-
 theorem logDeriv_eq_1 (x : ℍ) (n : ℕ) :
-    logDeriv (fun z => 1 - z ^ 2 / (n + 1) ^ 2) x = 1 / (x - (n + 1)) + 1 / (x + (n + 1)) :=
+    logDeriv (fun (z : ℂ) => 1 - z ^ 2 / (n + 1) ^ 2) x
+      = 1 / ((x : ℂ) - (n + 1)) + 1 / (x + (n + 1)) :=
   by
-  have h1 : logDeriv (fun z => 1 - z ^ 2 / (n + 1) ^ 2) x = -2 * x / ((n + 1) ^ 2 - x ^ 2) :=
-    by
+  have h1 :
+      logDeriv (fun z : ℂ => 1 - z ^ 2 / (n + 1) ^ 2) x = -2 * (x : ℂ) / ((n + 1) ^ 2 - x ^ 2) := by
     rw [logDeriv]
     simp
     rw [deriv_sub]
@@ -55,10 +56,9 @@ theorem logDeriv_eq_1 (x : ℍ) (n : ℕ) :
     congr
     rw [mul_one_sub]
     simp only [sub_right_inj]
-    apply mul_div_cancel'
+    apply mul_div_cancel₀
     apply pow_ne_zero
     norm_cast
-    linarith
     apply differentiableAt_const
     apply DifferentiableAt.div_const
     apply DifferentiableAt.pow
@@ -96,12 +96,11 @@ theorem factor_ne_zero (x : ℍ) (n : ℕ) : (1 : ℂ) - x ^ 2 / (n + 1) ^ 2 ≠
   have hs := h.symm
   rw [div_eq_one_iff_eq] at hs
   have hr := upper_half_ne_nat_pow_two x (n + 1)
-  simp only [Nat.cast_add, algebraMap.coe_one, Ne.def] at *
+  simp only [Nat.cast_add, algebraMap.coe_one] at *
   norm_cast at *
   norm_cast
   apply pow_ne_zero
   norm_cast
-  linarith
 
 theorem DifferentiableOn.product (F : ℕ → ℂ → ℂ) (n : ℕ) (s : Set ℂ)
     (hd : ∀ i : Finset.range n, DifferentiableOn ℂ (fun z => F i z) s) :
@@ -109,14 +108,12 @@ theorem DifferentiableOn.product (F : ℕ → ℂ → ℂ) (n : ℕ) (s : Set �
   by
   induction' n with n n_ih
   simp
-  apply differentiableOn_const
   simp_rw [Finset.prod_range_succ]
   apply DifferentiableOn.mul
   apply n_ih
   intro i
   simp at *
   apply hd
-  norm_cast
   have hi := i.2
   norm_cast at hi
   rw [Finset.mem_range] at hi
@@ -134,7 +131,6 @@ theorem prod_diff_on' (n : ℕ) :
   apply DifferentiableOn.sub
   apply differentiableOn_const
   apply DifferentiableOn.div_const
-  norm_cast
   apply DifferentiableOn.pow
   apply differentiable_id.differentiableOn
 
@@ -148,48 +144,47 @@ theorem product_diff_on_H (n : ℕ) :
   apply prod_diff_on'
 
 theorem logDeriv_of_prod (x : ℍ) (n : ℕ) :
-    logDeriv (fun z => ↑π * z * ∏ j in Finset.range n, (1 - z ^ 2 / (j + 1) ^ 2)) x =
+    logDeriv (fun z : ℂ => ↑π * z * ∏ j in Finset.range n, (1 - z ^ 2 / (j + 1) ^ 2)) x =
       1 / x + ∑ j in Finset.range n, (1 / ((x : ℂ) - (j + 1)) + 1 / (x + (j + 1))) :=
   by
-  rw [log_derv_mul]
-  rw [logDeriv_pi_z]
-  simp only [one_div, add_right_inj]
-  have := logDeriv_prod (Finset.range n) fun n : ℕ => fun z : ℂ => 1 - z ^ 2 / (n + 1) ^ 2
-  simp at this
-  rw [← Finset.prod_fn]
-  norm_cast at *
-  rw [this]
-  have :=logDeriv_eq_1 x n
-  norm_cast at *
-  simp at *
-  congr
-  ext1 y
-  have :=logDeriv_eq_1 x y
-  simp at this
-  norm_cast at *
-  intro m _
-  have := factor_ne_zero x m
-  norm_cast at *
-  swap
-  apply mul_ne_zero
-  apply mul_ne_zero
-  norm_cast
-  apply Real.pi_ne_zero
-  apply UpperHalfPlane.ne_zero x
-  rw [Finset.prod_ne_zero_iff]
-  intro a _
-  apply factor_ne_zero x a
-  intro m _
-  apply DifferentiableAt.div_const
-  apply DifferentiableAt.pow
-  apply differentiable_id.differentiableAt
-  apply DifferentiableAt.const_mul
-  apply differentiable_id.differentiableAt
-  apply DifferentiableOn.differentiableAt
-  apply (prod_diff_on' n)
-  apply isOpen_iff_mem_nhds.1
-  apply upper_half_plane_isOpen
-  apply x.2
+  rw [logDeriv_mul]
+  · rw [logDeriv_pi_z]
+    simp only [one_div, add_right_inj]
+    have := logDeriv_prod (Finset.range n) fun n : ℕ => fun z : ℂ => 1 - z ^ 2 / (n + 1) ^ 2
+    simp at this
+    norm_cast at *
+    rw [this]
+    have := logDeriv_eq_1 x n
+    norm_cast at *
+    simp at *
+    congr
+    ext1 y
+    have :=logDeriv_eq_1 x y
+    simp at this
+    norm_cast at *
+    intro m _
+    have := factor_ne_zero x m
+    norm_cast at *
+  · simp [Real.pi_ne_zero, UpperHalfPlane.ne_zero]
+  · apply Finset.prod_ne_zero_iff.mpr
+    intro a _
+    rw [ne_eq, sub_eq_zero, eq_comm, div_eq_one_iff_eq]
+    ·
+      rw [sq_eq_sq_iff_eq_or_eq_neg, not_or, ← ne_eq, ← ne_eq, ← Nat.cast_one, ← Nat.cast_add]
+      constructor
+      <;> intro hx
+      <;> have := congrArg (fun x ↦ x.im) hx
+      <;> exact x.prop.ne.symm (by simpa [this])
+    · norm_cast
+      rw [sq_eq_zero_iff]
+      omega
+  · change DifferentiableAt ℂ (fun x : ℂ ↦ π * x) x
+    exact differentiableAt_id.const_mul _
+  · apply DifferentiableOn.differentiableAt
+    apply (prod_diff_on' n)
+    apply isOpen_iff_mem_nhds.1
+    apply upper_half_plane_isOpen
+    apply x.2
 
 
 theorem prod_be_exp (f : ℕ → ℂ) (s : Finset ℕ) :
@@ -245,7 +240,7 @@ theorem prod_le_prod_abs (f : ℕ → ℂ) (n : ℕ) :
     apply Complex.abs.nonneg
   apply le_trans H4
   ring_nf
-  rw [Finset.prod_range_succ]
+  rw [add_comm 1 h, Finset.prod_range_succ]
   rw [mul_comm]
   simp
   norm_cast
@@ -296,7 +291,7 @@ theorem unif_prod_bound (F : ℕ → ℂ → ℂ) (K : Set ℂ)
     apply Complex.abs.nonneg
     apply hs a
   have hexp : 0 < Real.exp T := by have := Real.exp_pos T; apply this
-  refine' ⟨Real.exp T, _⟩
+  refine ⟨Real.exp T, ?_⟩
   simp [hexp]
   intro n x hx
   apply le_trans (prod_be_exp _ _)
@@ -338,7 +333,7 @@ theorem tsum_unif (F : ℕ → ℂ → ℂ) (K : Set ℂ)
   intro ε hε
   have HF := hf ε hε
   obtain ⟨N, hN⟩ := HF
-  refine' ⟨N, _⟩
+  refine ⟨N, ?_⟩
   intro n x hx _
   have hnn : N ≤ N := by rfl
   have HN2 := hN N hnn x hx
@@ -480,7 +475,7 @@ theorem sum_prod_unif_conv (F : ℕ → ℂ → ℂ) (g : ℂ → ℂ) (K : Set 
   obtain ⟨δ, hδ⟩ := hdelta
   have HH := H δ hδ.1
   obtain ⟨N, HN⟩ := HH
-  refine' ⟨N, _⟩
+  refine ⟨N, ?_⟩
   intro n hn m hm x hx
   have hCm := hC (Finset.range m) x
   have hCn := hC (Finset.range n) x
@@ -562,7 +557,7 @@ theorem tendst_unif_coe (K : Set ℂ) (f : ℕ → K → ℝ) (g : K → ℝ) :
   intro e he
   have hh := h e he
   obtain ⟨a, ha⟩ := hh
-  refine' ⟨a, _⟩
+  refine ⟨a, ?_⟩
   intro b hb x hx
   have H := ha b hb x hx
   convert H
@@ -578,7 +573,6 @@ theorem ball_abs_le_center_add_rad (r : ℝ) (z : ℂ) (x : ball z r) : Complex.
   have hx : (x : ℂ) = x - z + z := by ring
   rw [hx]
   apply lt_of_le_of_lt (Complex.abs.add_le (x - z) z)
-  norm_cast
   rw [add_comm]
   simp only [add_lt_add_iff_left]
   have hxx := x.2
@@ -614,13 +608,13 @@ theorem summable_rie_twist (x : ℂ) : Summable fun n : ℕ => Complex.abs (x ^ 
 theorem rie_twist_bounded_on_ball (z : ℂ) (r : ℝ) :
     ∃ T : ℝ, ∀ x : ℂ, x ∈ ball z r → ∑' n : ℕ, Complex.abs (-x ^ 2 / (↑n + 1) ^ 2) ≤ T :=
   by
-  refine' ⟨∑' n : ℕ, (Complex.abs z + r) ^ 2 / Complex.abs ((n + 1) ^ 2), _⟩
+  refine ⟨∑' n : ℕ, (Complex.abs z + r) ^ 2 / Complex.abs ((n + 1) ^ 2), ?_⟩
   intro x hx
   simp only [map_div₀, AbsoluteValue.map_neg, Complex.abs_pow]
   have := summable_rie_twist x
   apply tsum_le_tsum
   intro b
-  apply div_le_div_of_le
+  apply div_le_div_of_nonneg_right ?_
   apply pow_nonneg
   apply Complex.abs.nonneg
   apply pow_le_pow_left
@@ -646,7 +640,7 @@ theorem euler_sin_prod' (x : ℂ) (h0 : x ≠ 0) :
     apply hh
   have h1 := this (ε * Complex.abs (π * x)) hex
   obtain ⟨N, hN⟩ := h1
-  refine' ⟨N, _⟩
+  refine ⟨N, ?_⟩
   intro n hn
   have h2 := hN n hn
   simp
@@ -697,21 +691,20 @@ theorem tendsto_locally_uniformly_euler_sin_prod' (z : ℍ') (r : ℝ) (hr : 0 <
   rw [← tendst_unif_coe _ _ _]
   convert HH
   simp only [coe_finset_sum', map_div₀, Complex.abs_pow]
-  funext
   rw [tsum_coe]
   congr
   simp only [map_div₀, Complex.abs_pow]
   simp [hr, nonempty_coe_sort, nonempty_ball]
-  refine' ⟨z, _⟩
+  refine ⟨z, ?_⟩
   simp [hr, z.2]
   apply z.2
   intro n x
   simp only [map_div₀, Complex.abs_pow, ofReal_div, ofReal_pow, abs_ofReal, Complex.abs_abs,
     ofReal_add]
-  apply div_le_div_of_le
+  apply div_le_div_of_nonneg_right ?_
+  norm_cast
   apply pow_nonneg
   apply Complex.abs.nonneg
-  norm_cast
 
   simp
   apply pow_le_pow_left (Complex.abs.nonneg _)
@@ -723,7 +716,7 @@ theorem tendsto_locally_uniformly_euler_sin_prod' (z : ℍ') (r : ℝ) (hr : 0 <
   apply summable_rie_twist s
   have B := rie_twist_bounded_on_ball z.1 r
   obtain ⟨T, hT⟩ := B
-  refine' ⟨T, _⟩
+  refine ⟨T, ?_⟩
   intro x hx
   apply hT x
   rw [mem_inter_iff] at hx
@@ -798,7 +791,7 @@ theorem tendsto_euler_log_derv_sin_prodd (x : ℍ) :
   have :=
     logDeriv_tendsto
       (fun n : ℕ => fun z => ↑π * (z : ℂ) * ∏ j in Finset.range n, (1 - z ^ 2 / (j + 1) ^ 2))
-      (Complex.sin ∘ fun t => π * t) ℍ' upper_half_plane_isOpen x
+      (Complex.sin ∘ fun t => π * t) (p := atTop) upper_half_plane_isOpen x
   apply this
   rw [Metric.tendstoLocallyUniformlyOn_iff]
   intro ε hε x hx
@@ -813,9 +806,9 @@ theorem tendsto_euler_log_derv_sin_prodd (x : ℍ) :
     · rw [abs_pos]; exact Real.pi_ne_zero
     exact lt_add_of_le_of_pos (Complex.abs.nonneg x) hε
   have HH := H (ε / (Complex.abs (π * x) + |π| * ε)) hxe
-  refine' ⟨ball x ε ∩ ℍ', _⟩
+  refine ⟨ball x ε ∩ ℍ', ?_⟩
   simp  [Subtype.coe_mk ge_iff_le, mem_inter_iff, mem_ball,
-    and_imp, exists_prop, Ne.def, forall_exists_index, gt_iff_lt] at *
+    and_imp, exists_prop, forall_exists_index, gt_iff_lt] at *
   constructor
   rw [Metric.mem_nhdsWithin_iff]
   constructor
@@ -825,7 +818,7 @@ theorem tendsto_euler_log_derv_sin_prodd (x : ℍ) :
   simp [hε]
   exact self_mem_nhdsWithin
   obtain ⟨N, hN⟩ := HH
-  refine' ⟨N, _⟩
+  refine ⟨N, ?_⟩
   intro b hb y hy hyy
   have := hN b hb y hy hyy
   rw [dist_eq_norm] at *
@@ -845,7 +838,7 @@ theorem tendsto_euler_log_derv_sin_prodd (x : ℍ) :
   apply Real.pi_ne_zero
   apply UpperHalfPlane.ne_zero ⟨y, hyy⟩
   simp
-  refine' ⟨1, _⟩
+  refine ⟨1, ?_⟩
   intro b _
   have := product_diff_on_H b
   norm_cast at *

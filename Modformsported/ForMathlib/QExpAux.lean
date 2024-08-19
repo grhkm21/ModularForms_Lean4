@@ -2,7 +2,7 @@ import Mathlib.Data.Complex.Exponential
 import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 import Modformsported.ModForms.Riemzeta
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
-import Mathlib.Analysis.Calculus.Series
+import Mathlib.Analysis.Calculus.SmoothSeries
 import Modformsported.ForMathlib.Cotangent.CotangentIdentity
 import Modformsported.ForMathlib.TsumLemmas
 import Modformsported.ForMathlib.AuxpLemmas
@@ -13,7 +13,8 @@ import Modformsported.ForMathlib.ExpSummableLemmas
 --import mod_forms.Eisenstein_Series.Eisenstein_series_q_expansions
 noncomputable section
 
-open ModularForm EisensteinSeries UpperHalfPlane TopologicalSpace Set MeasureTheory intervalIntegral
+open UpperHalfPlane hiding I
+open ModularForm EisensteinSeries TopologicalSpace Set MeasureTheory intervalIntegral
   Metric Filter Function Complex
 
 open scoped Interval Real NNReal ENNReal Topology BigOperators Nat Classical
@@ -128,7 +129,7 @@ theorem q_exp_iden (k : ℕ) (hk : 3 ≤ k) (z : ℍ) :
     apply nat_pow_aux k hk t-/
   simp [one_div, neg_mul] at *
   have hk2 : (-1 : ℂ) ^ ((k - 1) ) * (k - 1)! ≠ 0 := by
-    simp  [Nat.factorial_ne_zero, Ne.def, neg_one_pow_mul_eq_zero_iff, Nat.cast_eq_zero,
+    simp  [Nat.factorial_ne_zero, neg_one_pow_mul_eq_zero_iff, Nat.cast_eq_zero,
       not_false_iff]
   rw [← mul_right_inj' hk2]
   norm_cast at *
@@ -141,7 +142,7 @@ theorem q_exp_iden (k : ℕ) (hk : 3 ≤ k) (z : ℍ) :
        (-1) ^ (↑k - 1) * (-(2 * ↑π * I)) ^ (k : ℕ) * (↑(k - 1)!  * (↑(k - 1)!)⁻¹) := by ring
     norm_cast at *
     rw [hj]
-    rw [mul_inv_cancel]
+    rw [mul_inv_cancel₀]
     simp
     rw [mul_comm]
     rw [neg_pow]

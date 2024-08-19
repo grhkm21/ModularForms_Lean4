@@ -3,7 +3,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral
 import Mathlib.NumberTheory.ModularForms.Basic
 import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
 
-open Complex
+open Complex CongruenceSubgroup
 open scoped UpperHalfPlane Real ModularForm
 
 noncomputable section
@@ -46,4 +46,8 @@ def ModularityConjecture (E : EllipticCurve ℚ) :=
   ∃ (N : ℕ+) (f : CuspForm (Gamma0 N) 2), IsNormalisedEigenform f ∧
     ∀ (p : ℕ), p.Prime → (N : ZMod p) ≠ 0 → a_[p]f = E.ap p
 
-theorem modularity_conjecture (E : EllipticCurve ℚ) : ModularityConjecture E := sorry
+theorem modularity_conjecture (E : EllipticCurve ℚ) : ModularityConjecture E := by
+  -- That's what Fermat says
+  try trivial
+  -- hmm.
+  sorry

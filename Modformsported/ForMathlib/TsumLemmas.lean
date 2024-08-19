@@ -1,4 +1,4 @@
-import Mathlib.Analysis.Calculus.Series
+import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.InnerProductSpace.Basic
 
 noncomputable section
@@ -20,7 +20,7 @@ theorem tendsto_coe {α : Type _} {f : Filter α} {m : α → ℝ} {a : ℝ} :
 @[simp, norm_cast]
 theorem coe_finset_sum' {α : Type _} {s : Finset α} {f : α → ℝ} :
     ↑(∑ a in s, f a) = (∑ a in s, f a : ℂ) :=
-  ofReal.map_sum f s
+  ofReal_sum _ _
 
 @[norm_cast]
 theorem hasSum_coe {α : Type _} {f : α → ℝ} {r : ℝ} :
@@ -256,8 +256,6 @@ theorem sum_lemma (f : ℤ × ℤ → ℝ) (h : ∀ y : ℤ × ℤ, 0 ≤ f y) (
   constructor
   intro x
   simp
-  rw [unionEquiv]
-  simp
   apply Finset.summable
   convert H
   rw [←Finset.tsum_subtype]
@@ -267,8 +265,7 @@ theorem sum_lemma (f : ℤ × ℤ → ℝ) (h : ∀ y : ℤ × ℤ, 0 ≤ f y) (
 theorem tsum_lemma {γ : Type} [AddCommGroup γ]  [ UniformSpace γ]
     [UniformAddGroup γ] [CompleteSpace γ] [T0Space γ] [T2Space γ]
     (f : ℤ × ℤ → γ) (ι : ℕ → Finset (ℤ × ℤ)) (HI : ∀ y : ℤ × ℤ, ∃! i : ℕ, y ∈ ι i)
-    (hs : Summable f) : ∑' x, f x = ∑' n : ℕ, ∑ x in ι n, f x :=
-  by
+    (hs : Summable f) : ∑' x, f x = ∑' n : ℕ, ∑ x in ι n, f x := by
   let h2 := unionEquiv ι HI
   have hdis' := disjoint_aux ι HI
   have hdis : ∀ a b : ℕ, a ≠ b → Disjoint ( (ι a)) ((ι b)) :=
@@ -276,18 +273,10 @@ theorem tsum_lemma {γ : Type} [AddCommGroup γ]  [ UniformSpace γ]
     intro a b hab;
     apply hdis'; exact hab
   have HS : Summable (f ∘ h2) := by rw [Equiv.summable_iff h2]; exact hs
-  have HH := tsum_disjoint_union_of_nonneg' ?_ HS
+  have HH := tsum_disjoint_union_of_nonneg' (by exact_mod_cast hdis) HS
   simp at HH
-  have := Equiv.tsum_eq h2 f
-  rw [← this]
-  rw [HH]
-  rw [unionEquiv]
+  simp_rw [← Equiv.tsum_eq h2 f, HH, h2, unionEquiv]
   simp
-  norm_cast
-
-
-
-
 
 theorem prod_sum
   (f : ℤ × ℤ → ℂ) (hf : Summable f) : Summable fun a => ∑' b, f ⟨a, b⟩ :=
@@ -319,7 +308,7 @@ def sigmaAntidiagonalEquivProd : (Σ n : ℕ+, Nat.divisorsAntidiagonal n) ≃ �
   toFun x := mapdiv x.1 x.2
   invFun x :=
     ⟨⟨x.1.1 * x.2.1, by apply mul_pos x.1.2 x.2.2⟩, ⟨x.1, x.2⟩, by
-      rw [Nat.mem_divisorsAntidiagonal]; simp; constructor; rfl; rw [not_or]; constructor;
+      rw [Nat.mem_divisorsAntidiagonal]; simp; constructor; rfl; constructor;
         linarith [x.1.2]; linarith [x.2.2] ⟩
   left_inv := by
     rintro ⟨n, ⟨k, l⟩, h⟩
@@ -384,7 +373,6 @@ theorem int_nat_sum [AddCommGroup α] [UniformSpace α] [ UniformAddGroup α]  [
   rw [← (Equiv.ofInjective (Int.ofNat : ℕ → ℤ) Nat.cast_injective).symm.summable_iff]
   apply Summable.congr h_left
   intro b
-  funext
   simp
   apply congr_arg
   exact Eq.symm (Equiv.apply_ofInjective_symm Nat.cast_injective b)
@@ -424,7 +412,7 @@ theorem sum_int_even  [UniformSpace α] [CommRing α]  [ UniformAddGroup α] [Co
       apply hf
     rw [h1]
     convert hpos
-  have := (HasSum.pos_add_zero_add_neg hpos hneg).tsum_eq
+  have := (HasSum.of_add_one_of_neg_add_one hpos hneg).tsum_eq
   rw [this]
   ring
 
@@ -511,7 +499,7 @@ theorem int_tsum_pNat [UniformSpace α] [CommRing α]  [ UniformAddGroup α] [Co
     congr
     simp_rw [Int.pred]
     ring
-  have := (HasSum.pos_add_zero_add_neg hpos hneg).tsum_eq
+  have := (HasSum.of_add_one_of_neg_add_one hpos hneg).tsum_eq
   rw [this]
   ring_nf
 
@@ -545,12 +533,11 @@ theorem hasDerivAt_tsum_fun {α : Type _} (f : α → ℂ → ℂ)
   intro n x hx
   simp
   apply hu2 n ⟨x, hx⟩
-  apply eventually_of_forall
+  apply Eventually.of_forall
   intro t r hr
   apply HasDerivAt.sum
   intro q _
   rw [hasDerivAt_deriv_iff]
-  simp
   apply hf2 q ⟨r, hr⟩
 
 /- ./././Mathport/Syntax/Translate/Basic.lean:635:2: warning: expanding binder collection (K «expr ⊆ » s) -/

@@ -8,11 +8,12 @@ import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
 import Mathlib.Data.Set.Pointwise.SMul
 import Mathlib.Analysis.Normed.Field.InfiniteSum
 import Modformsported.ForMathlib.EisensteinSeries.SL2lemmas
+import Mathlib.NumberTheory.ModularForms.EisensteinSeries.Defs
 
 noncomputable section
 
-open ModularForm UpperHalfPlane TopologicalSpace Set
- Metric Filter Function Complex  Manifold Pointwise
+open ModularForm UpperHalfPlane TopologicalSpace Set Metric Filter Function
+  Complex  Manifold Pointwise CongruenceSubgroup
 
 open scoped Interval Real NNReal ENNReal Topology BigOperators Nat Classical
 
@@ -20,125 +21,131 @@ local notation "SL(" n ", " R ")" => Matrix.SpecialLinearGroup (Fin n) R
 
 namespace EisensteinSeries
 
-/--Subtype of functions valued in pars of coprime integers congruent to `a,b`.-/
-def gammaSet (N : ℕ) (a b : ℤ ) := {f : (Fin 2) → ℤ | (f 0 : ZMod N) = a ∧ (f 1 : ZMod N) = b ∧
-  (f 0).gcd (f 1) = 1 }
+-- PR'ed!
+-- /--Subtype of functions valued in pars of coprime integers congruent to `a,b`.-/
+-- def gammaSet (N : ℕ) (a b : ℤ ) := {f : (Fin 2) → ℤ | (f 0 : ZMod N) = a ∧ (f 1 : ZMod N) = b ∧
+--   (f 0).gcd (f 1) = 1 }
+--
+-- @[simp]
+-- lemma gammaSet_mem (N : ℕ) (a b : ℤ ) (f : (Fin 2) → ℤ ) : f ∈ gammaSet N a b ↔
+--   (f 0 : ZMod N) = a ∧ (f 1 : ZMod N) = b ∧ (f 0).gcd (f 1) = 1 := by rfl
+--
+-- lemma gammaSet_mem_iff (N : ℕ) (a b c d : ℤ) (v : (gammaSet N a b)) : v.1 ∈ gammaSet N c d ↔
+--   (a : ZMod N) = c ∧ (b : ZMod N) = d := by
+--   have h2 := v.2
+--   simp only [gammaSet_mem] at *
+--   rw [h2.1, h2.2.1]
+--   simp only [h2.2.2, and_true]
+--
+-- lemma gammaSet_one_eq (a b c d : ℤ ) : gammaSet 1 a b = gammaSet 1 c d := by
+--   simp [gammaSet, eq_iff_true_of_subsingleton]
+--
+-- /--For level one the gamma sets are all equivalent, this is the equivalence-/
+-- def gammaSet_one_equiv (a b c d : ℤ) : (gammaSet 1 a b) ≃ (gammaSet 1 c d) := by
+--   refine Equiv.Set.ofEq (gammaSet_one_eq a b c d)
 
-@[simp]
-lemma gammaSet_mem (N : ℕ) (a b : ℤ ) (f : (Fin 2) → ℤ ) : f ∈ gammaSet N a b ↔
-  (f 0 : ZMod N) = a ∧ (f 1 : ZMod N) = b ∧ (f 0).gcd (f 1) = 1 := by rfl
+-- /-- The function on `(Fin 2 → ℤ)` whose sum defines an Eisenstein series.-/
+-- def eise (k : ℤ) (z : ℍ) : (Fin 2 → ℤ) → ℂ := fun x => 1 / (x 0 * z.1 + x 1) ^ k
+--
+-- /--The Moebius transformation defined by a matrix in `SL(2,ℤ)` sending a function (or vector)
+--   `v` to `A v`-/
+-- def moebiusEquiv (A : SL(2,ℤ)) : (Fin 2 → ℤ) ≃ (Fin 2 → ℤ) :=
+--   (Matrix.SpecialLinearGroup.toLin' (SpecialLinearGroup.transpose A))
+--
+-- theorem moebius_aux_lem (k : ℤ) (a b c d i1 i2 : ℂ) (z : ℍ) (h : c * z + d ≠ 0) :
+--     ((i1 * ((a * z + b) / (c * z + d)) + i2) ^ k)⁻¹ =
+--       (c * z + d) ^ k * (((i1 * a + i2 * c ) * z + ( i1 * b + i2 * d)) ^ k)⁻¹ := by
+--   have h1 : i1 * ((a * z + b) / (c * z + d)) + i2 = i1 * (a * z + b) / (c * z + d) + i2 := by ring;
+--   have h2 : i1 * (a * z + b) / (c * z + d) + i2 = i1 * (a * z + b) / (c * z + d) + i2 := by ring;
+--   have h3 := div_add' (i1 * (a * z + b)) i2 (c * z + d) h
+--   rw [h1,h2,h3, div_eq_inv_mul, mul_comm]
+--   ring_nf
+--   field_simp
+--
+-- -- How the Eise function changes under the Moebius action
+-- theorem eise_Moebius' (k : ℤ) (z : ℍ) (A : SL(2,ℤ)) (i : (Fin 2 → ℤ)) :
+--     eise k (A • z) i =
+--       (A.1 1 0 * z.1 + A.1 1 1) ^ k * eise k z (moebiusEquiv A i) := by
+--   simp only [eise, specialLinearGroup_apply, algebraMap_int_eq, eq_intCast, ofReal_intCast,
+--     one_div, moebiusEquiv, SpecialLinearGroup.transpose, EquivLike.coe_coe,
+--     Matrix.SpecialLinearGroup.toLin'_apply, Matrix.toLin'_apply', Matrix.mulVecLin_transpose,
+--     Matrix.vecMulLinear_apply, Matrix.vecMul, Matrix.vec2_dotProduct, Int.cast_add, Int.cast_mul]
+--   have hc := moebius_aux_lem k (A 0 0) (A 0 1) (A 1 0) (A 1 1) (i 0) (i 1) z ?_
+--   norm_cast at *
+--   apply UpperHalfPlane.denom_ne_zero A
 
-lemma gammaSet_mem_iff (N : ℕ) (a b c d : ℤ) (v : (gammaSet N a b)) : v.1 ∈ gammaSet N c d ↔
-  (a : ZMod N) = c ∧ (b : ZMod N) = d := by
-  have h2 := v.2
-  simp only [gammaSet_mem] at *
-  rw [h2.1, h2.2.1]
-  simp only [h2.2.2, and_true]
+-- /--The permutation of a gammaSet given by multiplying by an element `Γ(N)` -/
+-- def gammaMoebiusFun (N : ℕ) (a : Fin 2 → ZMod N) (γ : Gamma N) (f : gammaSet N a) : gammaSet N a := by
+--   use Matrix.vecMul f.1 γ.1.1
+--   have := vecMul_SL2_mem_gammaSet
+--   -- simp only [gammaSet_mem, Matrix.vecMul, Matrix.vec2_dotProduct, Int.cast_add, Int.cast_mul]
+--   -- have hγ := (Gamma_mem N _).1 γ.2
+--   -- have hf := f.2
+--   -- rw [hγ.1, hγ.2.2.1, hγ.2.2.2, hγ.2.1, hf.1, hf.2.1]
+--   -- simp only [mul_one, mul_zero, add_zero, zero_add, true_and]
+--   -- have := SL2_gcd (f.1 0) (f.1 1) hf.2.2 γ
+--   -- convert this
+--   -- repeat{
+--   -- simp_rw [Matrix.vecMul,Matrix.dotProduct,Matrix.vecCons]
+--   -- simp only [Fin.sum_univ_two, Fin.cons_zero, Fin.cons_one]}
+--
+-- lemma gammaMoebiusFun_eq_Moebequiv (N : ℕ) (a b : ℤ ) (γ : Gamma N) (f : gammaSet N a b) :
+--   (gammaMoebiusFun N a b γ f).1 = (moebiusEquiv γ.1 f.1) := by
+--   simp only [gammaMoebiusFun, moebiusEquiv, SpecialLinearGroup.transpose, EquivLike.coe_coe,
+--     Matrix.SpecialLinearGroup.toLin'_apply, Matrix.toLin'_apply', Matrix.mulVecLin_transpose,
+--     Matrix.vecMulLinear_apply]
+--
+-- lemma gamma_left_inv (N : ℕ) (a b : ℤ ) (γ : Gamma N) (v : gammaSet N a b) :
+--   gammaMoebiusFun N a b γ⁻¹ (gammaMoebiusFun N a b γ v) = v := by
+--   simp_rw [gammaMoebiusFun, InvMemClass.coe_inv, Matrix.vecMul_vecMul]
+--   apply Subtype.ext
+--   simp only [Matrix.SpecialLinearGroup.coe_inv]
+--   rw [Matrix.mul_adjugate, γ.1.2]
+--   simp
+--
+-- lemma gamma_right_inv (N : ℕ) (a b : ℤ ) (γ : Gamma N) (v : gammaSet N a b) :
+--   gammaMoebiusFun N a b γ (gammaMoebiusFun N a b γ⁻¹ v) = v := by
+--   simp_rw [gammaMoebiusFun]
+--   simp only [InvMemClass.coe_inv, Matrix.vecMul_vecMul]
+--   apply Subtype.ext
+--   simp only [Matrix.SpecialLinearGroup.coe_inv]
+--   rw [Matrix.adjugate_mul, γ.1.2]
+  -- simp
 
-lemma gammaSet_one_eq (a b c d : ℤ ) : gammaSet 1 a b = gammaSet 1 c d := by
-  simp [gammaSet, eq_iff_true_of_subsingleton]
+#check gammaSetEquiv
+-- /--The equivalence of gammaSets given by an element of `Γ(N)`-/
+-- def gammaMoebiusEquiv (N : ℕ) (a : Fin 2 → ZMod N) (γ : Gamma N) :
+--     (gammaSet N a) ≃ (gammaSet N a) where
+--   toFun := gammaMoebiusFun N a γ
+--   invFun := gammaMoebiusFun N a' γ⁻¹
+--   left_inv _ := gamma_left_inv _ _ _ γ _
+--   right_inv _ := gamma_right_inv _ _ _ γ _
 
-/--For level one the gamma sets are all equivalent, this is the equivalence-/
-def gammaSet_one_equiv (a b c d : ℤ) : (gammaSet 1 a b) ≃ (gammaSet 1 c d) := by
-  refine Equiv.Set.ofEq (gammaSet_one_eq a b c d)
+-- /-- The Eisenstein series of weight `k : ℤ` and level `Γ(N)`, for `N : ℕ`. -/
+-- def EisensteinLevelNtsum (k : ℤ) (N : ℕ) (a : Fin 2 → ZMod N) : ℍ → ℂ :=
+--   fun z => ∑' x : gammaSet N a, eise k z x
 
-/-- The function on `(Fin 2 → ℤ)` whose sum defines an Eisenstein series.-/
-def eise (k : ℤ) (z : ℍ) : (Fin 2 → ℤ) → ℂ := fun x => 1 / (x 0 * z.1 + x 1) ^ k
-
-/--The Moebius transformation defined by a matrix in `SL(2,ℤ)` sending a function (or vector)
-  `v` to `A v`-/
-def moebiusEquiv (A : SL(2,ℤ)) : (Fin 2 → ℤ) ≃ (Fin 2 → ℤ) :=
-  (Matrix.SpecialLinearGroup.toLin' (SpecialLinearGroup.transpose A))
-
-theorem moebius_aux_lem (k : ℤ) (a b c d i1 i2 : ℂ) (z : ℍ) (h : c * z + d ≠ 0) :
-    ((i1 * ((a * z + b) / (c * z + d)) + i2) ^ k)⁻¹ =
-      (c * z + d) ^ k * (((i1 * a + i2 * c ) * z + ( i1 * b + i2 * d)) ^ k)⁻¹ := by
-  have h1 : i1 * ((a * z + b) / (c * z + d)) + i2 = i1 * (a * z + b) / (c * z + d) + i2 := by ring;
-  have h2 : i1 * (a * z + b) / (c * z + d) + i2 = i1 * (a * z + b) / (c * z + d) + i2 := by ring;
-  have h3 := div_add' (i1 * (a * z + b)) i2 (c * z + d) h
-  rw [h1,h2,h3, div_eq_inv_mul, mul_comm]
-  ring_nf
-  field_simp
-
--- How the Eise function changes under the Moebius action
-theorem eise_Moebius' (k : ℤ) (z : ℍ) (A : SL(2,ℤ)) (i : (Fin 2 → ℤ)) :
-    eise k (A • z) i =
-      (A.1 1 0 * z.1 + A.1 1 1) ^ k * eise k z (moebiusEquiv A i) := by
-  simp only [eise, specialLinearGroup_apply, algebraMap_int_eq, eq_intCast, ofReal_int_cast,
-    one_div, moebiusEquiv, SpecialLinearGroup.transpose, EquivLike.coe_coe,
-    Matrix.SpecialLinearGroup.toLin'_apply, Matrix.toLin'_apply', Matrix.mulVecLin_transpose,
-    Matrix.vecMulLinear_apply, Matrix.vecMul, Matrix.vec2_dotProduct, Int.cast_add, Int.cast_mul]
-  have hc := moebius_aux_lem k (A 0 0) (A 0 1) (A 1 0) (A 1 1) (i 0) (i 1) z ?_
-  norm_cast at *
-  apply UpperHalfPlane.denom_ne_zero A
-
-/--The permutation of a gammaSet given by multiplying by an element `Γ(N)` -/
-def gammaMoebiusFun (N : ℕ) (a b : ℤ) (γ : Gamma N) (f : gammaSet N a b) : (gammaSet N a b) := by
-  use Matrix.vecMul f.1 γ.1.1
-  simp only [gammaSet_mem, Matrix.vecMul, Matrix.vec2_dotProduct, Int.cast_add, Int.cast_mul]
-  have hγ := (Gamma_mem N _).1 γ.2
-  have hf := f.2
-  rw [hγ.1, hγ.2.2.1, hγ.2.2.2, hγ.2.1, hf.1, hf.2.1]
-  simp only [mul_one, mul_zero, add_zero, zero_add, true_and]
-  have := SL2_gcd (f.1 0) (f.1 1) hf.2.2 γ
-  convert this
-  repeat{
-  simp_rw [Matrix.vecMul,Matrix.dotProduct,Matrix.vecCons]
-  simp only [Fin.sum_univ_two, Fin.cons_zero, Fin.cons_one]}
-
-lemma gammaMoebiusFun_eq_Moebequiv (N : ℕ) (a b : ℤ ) (γ : Gamma N) (f : gammaSet N a b) :
-  (gammaMoebiusFun N a b γ f).1 = (moebiusEquiv γ.1 f.1) := by
-  simp only [gammaMoebiusFun, moebiusEquiv, SpecialLinearGroup.transpose, EquivLike.coe_coe,
-    Matrix.SpecialLinearGroup.toLin'_apply, Matrix.toLin'_apply', Matrix.mulVecLin_transpose,
-    Matrix.vecMulLinear_apply]
-
-lemma gamma_left_inv (N : ℕ) (a b : ℤ ) (γ : Gamma N) (v : gammaSet N a b) :
-  gammaMoebiusFun N a b γ⁻¹ (gammaMoebiusFun N a b γ v) = v := by
-  simp_rw [gammaMoebiusFun, InvMemClass.coe_inv, Matrix.vecMul_vecMul]
-  apply Subtype.ext
-  simp only [Matrix.SpecialLinearGroup.coe_inv]
-  rw [Matrix.mul_adjugate, γ.1.2]
-  simp
-
-lemma gamma_right_inv (N : ℕ) (a b : ℤ ) (γ : Gamma N) (v : gammaSet N a b) :
-  gammaMoebiusFun N a b γ (gammaMoebiusFun N a b γ⁻¹ v) = v := by
-  simp_rw [gammaMoebiusFun]
-  simp only [InvMemClass.coe_inv, Matrix.vecMul_vecMul]
-  apply Subtype.ext
-  simp only [Matrix.SpecialLinearGroup.coe_inv]
-  rw [Matrix.adjugate_mul, γ.1.2]
-  simp
-
-/--The equivalence of gammaSets given by an element of `Γ(N)`-/
-def gammaMoebiusEquiv (N : ℕ) (a b : ℤ ) (γ : Gamma N) : (gammaSet N a b) ≃ (gammaSet N a b)
-    where
-  toFun := gammaMoebiusFun N a b γ
-  invFun := gammaMoebiusFun N a b γ⁻¹
-  left_inv v:= by
-    apply gamma_left_inv
-  right_inv v:= by
-    apply gamma_right_inv
-
-/-- The Eisenstein series of weight `k : ℤ` and level `Γ(N)`, for `N : ℕ`. -/
-def EisensteinLevelNtsum (k : ℤ) (N : ℕ) (a b : ℤ) : ℍ → ℂ := fun z => ∑' x : (gammaSet N a b),
-  (eise k z x)
-
-/-- The SlashInvariantForm defined by an Eisenstein series of weight `k : ℤ`, level `Γ(N)`,
-  and congruence condition given by `a b : ℤ`. -/
-def eisensteinLevelNSIF (N : ℕ) (k a b : ℤ) : SlashInvariantForm (Gamma N) k
-    where
-  toFun := EisensteinLevelNtsum k N a b
-  slash_action_eq' := by
-    intro A
-    ext1 x
-    simp_rw [slash_action_eq'_iff, EisensteinLevelNtsum, UpperHalfPlane.subgroup_to_sl_moeb,
-      UpperHalfPlane.sl_moeb, ←(Equiv.tsum_eq (gammaMoebiusEquiv N a b A) (fun v => eise k x v)),
-      ←tsum_mul_left]
-    apply tsum_congr
-    intro v
-    have := eise_Moebius' k x A v
-    simp at this
-    rw [this]
-    congr
-    symm
-    apply gammaMoebiusFun_eq_Moebequiv
+#check eisensteinSeries_SIF
+-- /-- The SlashInvariantForm defined by an Eisenstein series of weight `k : ℤ`, level `Γ(N)`,
+--   and congruence condition given by `a b : ℤ`. -/
+-- def eisensteinLevelNSIF (N : ℕ) (k : ℤ) (a : Fin 2 → ZMod N) : SlashInvariantForm (Gamma N) k
+--     where
+--   toFun := EisensteinLevelNtsum k N a
+--   slash_action_eq' := by
+--     intro A
+--     ext1 x
+--     simp_rw [slash_action_eq'_iff, EisensteinLevelNtsum, ModularGroup.subgroup_to_sl_moeb,
+--       ModularGroup.sl_moeb]
+--     have := Equiv.tsum_eq (gammaSetEquiv a A) (fun v => eise k x v)
+--     simp [gammaSetEquiv] at this
+--     -- notTODO: oops I broke it
+--     sorry
+--     --   ←tsum_mul_left]
+--     -- apply tsum_congr
+--     -- intro v
+--     -- have := eise_Moebius' k x A v
+--     -- simp at this
+--     -- rw [this]
+--     -- congr
+--     -- symm
+--     -- apply gammaMoebiusFun_eq_Moebequiv

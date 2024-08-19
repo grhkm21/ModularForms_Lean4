@@ -1,7 +1,7 @@
 import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Data.Matrix.Notation
-import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup
+import Mathlib.LinearAlgebra.GeneralLinearGroup
 import Mathlib.Data.Complex.Basic
 
 
@@ -84,7 +84,6 @@ variable (A : SpecialLinearGroup n ℤ) (M : IntegralMatricesWithDeterminant n m
 @[simp]
 theorem smul_is_mul (A : SpecialLinearGroup n ℤ) (M : IntegralMatricesWithDeterminant n m) :
     (A • M).1 = A * M := by
-  simp [sLnZM]
   rfl
 
 instance : Coe (IntegralMatricesWithDeterminant n 1) (SpecialLinearGroup n ℤ) :=

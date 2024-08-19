@@ -49,6 +49,4 @@ lemma SL2_gcd (a b : ℤ) (hab : a.gcd b = 1) (A : SL(2,ℤ)) :
     let C := SpecialLinearGroup.transpose ((gcd_one_to_SL a b hab)) * A
     have := SL_to_gcd_one_fst_col C
     simp at this
-    rw [SpecialLinearGroup.transpose, gcd_one_to_SL] at this
-    simp at this
     norm_cast at this

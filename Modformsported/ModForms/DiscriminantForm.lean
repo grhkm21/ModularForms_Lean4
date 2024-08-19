@@ -3,21 +3,21 @@ import Mathlib.Data.Complex.Exponential
 import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 import Modformsported.ModForms.Riemzeta
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
-import Mathlib.Analysis.Calculus.Series
+import Mathlib.Analysis.Calculus.SmoothSeries
 
 
 
 noncomputable section
 
 open ModularForm EisensteinSeries UpperHalfPlane TopologicalSpace Set MeasureTheory intervalIntegral
-  Metric Filter Function Complex
+  Metric Filter Function Complex CongruenceSubgroup
 
 open scoped Interval Real NNReal ENNReal Topology BigOperators Nat
 
-def eisensteinSeries (k : ℤ) :=
-  if h : 3 ≤ k then EisensteinSeriesModularForm k h else 0
+-- def eisensteinSeries (k : ℤ) :=
+--   if h : 3 ≤ k then EisensteinSeriesModularForm k h else 0
 
-local notation "G[" k "]" => eisensteinSeries k
+local notation "G[" k "]" => eisensteinSeries_MF (show 3 ≤ k by decide) (N := 1) 0
 
 def eisenstein4 :=
   60 • G[4]
@@ -29,19 +29,19 @@ local notation "E₄" => eisenstein4
 
 local notation "E₆" => eisenstein6
 
-def E_4_cubed : ModularForm ⊤ 12 := (E₄).mul ((E₄).mul E₄)
+def E_4_cubed : ModularForm (Gamma 1) 12 := (E₄).mul ((E₄).mul E₄)
 
-def E_6_sq : ModularForm ⊤ 12 := (E₆).mul E₆
+def E_6_sq : ModularForm (Gamma 1) 12 := (E₆).mul E₆
 
-def discriminantForm : ModularForm ⊤ 12 := E_4_cubed - 27 • E_6_sq
+def discriminantForm : ModularForm (Gamma 1) 12 := E_4_cubed - 27 • E_6_sq
 
 open scoped DirectSum BigOperators
 
 local notation "ℍ" => UpperHalfPlane
 
-example : CommRing (⨁ n : ℤ, ModularForm ⊤ n) := by infer_instance
+example : CommRing (⨁ n : ℤ, ModularForm (Gamma 1) n) := by infer_instance
 
-variable (v : ⨁ n : ℕ, ModularForm ⊤ n)
+variable (v : ⨁ n : ℕ, ModularForm (Gamma 1) n)
 
 def e4 :=
   DirectSum.of _ 4 eisenstein4
@@ -49,14 +49,13 @@ def e4 :=
 def e6 :=
   DirectSum.of _ 6 eisenstein6
 
-theorem gmul_eq_mul {a b : ℤ} (f : ModularForm ⊤ a) (g : ModularForm ⊤ b) :
+theorem gmul_eq_mul {a b : ℤ} (f : ModularForm (Gamma 1) a) (g : ModularForm (Gamma 1) b) :
     GradedMonoid.GMul.mul f g = f.mul g := by rfl
 
 def delta :=
   e4 ^ 3 - 27 * e6 ^ 2
 
-theorem eqvs_of_defs : DirectSum.of _ 12 discriminantForm = delta :=
-  by
+theorem eqvs_of_defs : DirectSum.of _ 12 discriminantForm = delta := by
   rw [delta]
   rw [e4]
   rw [e6]

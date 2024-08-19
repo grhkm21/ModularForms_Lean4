@@ -66,7 +66,6 @@ theorem ineq1 (x y d : ℝ) : 0 ≤ d ^ 2 * (x ^ 2 + y ^ 2) ^ 2 + 2 * d * x * (x
   have h1 :
     d ^ 2 * (x ^ 2 + y ^ 2) ^ 2 + 2 * d * x * (x ^ 2 + y ^ 2) + x ^ 2 =
       (d * (x ^ 2 + y ^ 2) + x) ^ 2 := by
-        norm_cast
         ring
   rw [h1]
   positivity
@@ -108,7 +107,6 @@ theorem lowbound (z : ℍ) (δ : ℝ) :
         (δ ^ 2 * (z.1.1 ^ 2 + z.1.2 ^ 2) ^ 2 +
             2 * δ * z.1.1 * (z.1.1 ^ 2 + z.1.2 ^ 2) +
           z.1.1 ^ 2) :=by
-          norm_cast
           ring
   norm_cast at *
   rw [H4]
@@ -136,11 +134,9 @@ theorem auxlem (z : ℍ) (δ : ℝ) :
         Real.sqrt (((z : ℂ).re + δ) * ((z : ℂ).re + δ) + (z : ℂ).im * (z : ℂ).im) :=
       by
       rw [Real.sqrt_le_sqrt_iff]
-      norm_cast
       nlinarith; nlinarith
     simp at *
     left
-    norm_cast
     rw [normSq_apply]
     simp
     norm_cast at *
@@ -175,7 +171,6 @@ theorem baux (a : ℝ) (k : ℤ) (hk : 0 ≤ k) (b : ℂ) (h : 0 ≤ a) (h2 : a 
   lift k to ℕ using hk
   norm_cast at *
   simp only [map_pow]
-  norm_cast at *
   apply pow_le_pow_left h h2
 
 theorem baux2 (z : ℍ) (k : ℤ) : Complex.abs (rfunct z ^ k) = rfunct z ^ k := by
@@ -198,7 +193,6 @@ theorem auxlem2 (z : ℍ) (x : ℤ × ℤ) (k : ℤ) (hk : 0 ≤ k) :
   norm_cast at *
   simp only [map_pow]
   simp
-  norm_cast at *
   apply pow_le_pow_left (rfunct_pos _).le
   simp at *
   convert t2

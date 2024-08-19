@@ -1,7 +1,6 @@
 import Modformsported.ForMathlib.AuxpLemmas
 import Modformsported.ForMathlib.Cotangent.CotangentIdentity
 import Modformsported.ForMathlib.Cotangent.basic
-import Modformsported.ForMathlib.DependencyExtractor
 import Modformsported.ForMathlib.EisensteinSeries.Basic2
 import Modformsported.ForMathlib.EisensteinSeries.ModularForm
 import Modformsported.ForMathlib.EisensteinSeries.SL2lemmas

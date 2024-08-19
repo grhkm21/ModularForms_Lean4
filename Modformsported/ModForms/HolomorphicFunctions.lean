@@ -63,9 +63,8 @@ def IsHolomorphicOn {D : OpenSubs} (f : D.1 → ℂ) : Prop :=
   ∀ z : D.1, ∃ f', HasDerivWithinAt (extendByZero f) f' D.1 z
 
 theorem isHolomorphicOn_iff_differentiableOn (D : OpenSubs) (f : D.1 → ℂ) :
-    DifferentiableOn ℂ (extendByZero f) D.1 ↔ IsHolomorphicOn f :=
-  by
-  classical!
+    DifferentiableOn ℂ (extendByZero f) D.1 ↔ IsHolomorphicOn f := by
+  classical
   rw [IsHolomorphicOn]
   constructor
   · rw [DifferentiableOn]
@@ -187,7 +186,7 @@ theorem diff_on_diff (f : D.1 → ℂ)
   refine ⟨S, ⟨min e ε, lt_min he hε, ?_⟩, HD⟩
   calc
     Metric.ball x (min e ε) ∩ D.carrier
-    _ ⊆ Metric.ball x (min e ε) := Set.inter_subset_left _ _
+    _ ⊆ Metric.ball x (min e ε) := Set.inter_subset_left
     _ = Metric.ball x e ∩ Metric.ball x ε := by ext; simp
     _ ⊆ S := HE
 
