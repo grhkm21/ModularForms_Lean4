@@ -75,18 +75,25 @@ theorem holo_to_mdiff (f : ℍ → ℂ) (hf : DifferentiableOn ℂ (↑ₕf) { p
     exact (div_pos hτ zero_lt_two).trans h₄
   · exact Metric.isOpen_ball
 
+#check mdifferentiable_coe
+#check DifferentiableOn.congr
 theorem mdiff_to_holo (f : ℍ → ℂ) (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) :
     DifferentiableOn ℂ (↑ₕf) { point : ℂ | 0 < point.im } := by
-  simp_rw [MDifferentiable] at hf
-  simp only [MDifferentiableAt, differentiableWithinAt_univ, mfld_simps] at hf
-  simp_rw [DifferentiableOn]
-  intro x hx
-  have hff := (hf ⟨x, hx⟩).2
-  apply DifferentiableAt.differentiableWithinAt
-  simp_rw [DifferentiableAt] at *
-  obtain ⟨g, hg⟩ := hff
-  refine ⟨g, ?_⟩
-  sorry
+  rw [← mdifferentiableOn_iff_differentiableOn]
+  have : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) ofComplex {point | 0 < point.im} := by
+    sorry
+  apply hf.mdifferentiableOn.comp this (u := Set.univ) ?_
+  simp
+  -- simp_rw [MDifferentiable] at hf
+  -- simp only [MDifferentiableAt, differentiableWithinAt_univ, mfld_simps] at hf
+  -- simp_rw [DifferentiableOn]
+  -- intro x hx
+  -- have hff := (hf ⟨x, hx⟩).2
+  -- apply DifferentiableAt.differentiableWithinAt
+  -- simp_rw [DifferentiableAt] at *
+  -- obtain ⟨g, hg⟩ := hff
+  -- refine ⟨g, ?_⟩
+  -- sorry
   -- apply HasFDerivAt.congr_of_eventuallyEq
   -- simp_rw [Filter.eventuallyEq_iff_exists_mem]
   -- refine' ⟨ℍ', _⟩
@@ -101,6 +108,7 @@ theorem mdiff_to_holo (f : ℍ → ℂ) (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ
   -- intro y hy
   -- apply ext_chart f (⟨y, hy⟩ : ℍ')
 
+#check mdifferentiableOn_iff_differentiableOn
 theorem mdiff_iff_holo (f : ℍ → ℂ) :
     MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f ↔ DifferentiableOn ℂ (↑ₕf) { point : ℂ | 0 < point.im } :=
   ⟨mdiff_to_holo f, holo_to_mdiff f⟩
